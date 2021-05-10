@@ -2,6 +2,8 @@ from flask import Flask, request, abort, jsonify
 from flask_jwt import JWT, jwt_required, current_identity
 from datetime import datetime, timedelta
 from werkzeug.security import safe_str_cmp
+from orignalmodules import initialize
+import configparser
 
 from linebot import (
     LineBotApi, WebhookHandler
@@ -18,8 +20,11 @@ from flasgger import Swagger
 
 import os
 
-app = Flask(__name__)
+config = configparser.ConfigParser()
+inifile = os.path.join(os.path.dirname(__file__),'orignalmodules/config.ini')
+config.read(inifile)
 
+app = Flask(__name__)
 
 # JWTのユーザ認証に関する処理
 class User(object):
@@ -80,34 +85,12 @@ def protected():
 
 # swaggerによるタイトルとapiバージョンに関する設定
 swagger = Swagger(app,
-                  template={
-                      "swagger": "3.0",
-                      "openapi": "3.0.0",
-                      "info": {
-                          "title": "病院用アプリケーションAPI",
-                          "version": "1.0",
-                      },
-                      'components': {
-                          'securitySchemes': {
-                              'JWTtoken': {
-                                  'type': "apiKey",
-                                  'name': "Authorization",
-                                  'description': "認証に必要なあらかじめ生成されたJWTを入力",
-                                  'in': "header",
-                                  'scheme': 'jwt'
-                              }
-
-                          },
-                          'security': {
-                              'bearerAuth': []
-                          }
-                      }
-                  }
+                  template= initialize.template
                   )
 
 # LINE Developersで設定されているアクセストークンとChannel Secretをを取得し、設定します。
-YOUR_CHANNEL_ACCESS_TOKEN = "w5+lVb5tItohaa08Nck0hktxYq2s4jjp5S7ETnBo6v7DYui/j3l5zpC9x/M8Uimqb5NVowLsUeUMfZEsAZTfA4aMNbYzKXCBvX+tKoSmJob4GBUZX3dn12arZAjnccniFCFyL4qAkfDbTjSL0lCPLwdB04t89/1O/w1cDnyilFU="
-YOUR_CHANNEL_SECRET = "1449d6a8a8dbeec4eebad46107998c80"
+YOUR_CHANNEL_ACCESS_TOKEN = config["BussinesLINE"]["YOUR_CHANNEL_ACCESS_TOKEN"]
+YOUR_CHANNEL_SECRET = config["BussinesLINE"]["YOUR_CHANNEL_SECRET"]
 
 line_bot_api = LineBotApi(YOUR_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(YOUR_CHANNEL_SECRET)
@@ -194,6 +177,7 @@ def colors(palette):
         result = {palette: all_colors.get(palette)}
 
     return jsonify(result)
+
 # ポート番号の設定
 if __name__ == "__main__":
     # app.run()
